@@ -1,12 +1,12 @@
 """Functions related to creating, deleting and keeping track of physical Splitgraph objects."""
+import itertools
 import logging
+import math
 from collections import defaultdict
 from contextlib import contextmanager
+from datetime import datetime as dt, timedelta
 from random import getrandbits
 
-import itertools
-import math
-from datetime import datetime as dt, timedelta
 from psycopg2 import IntegrityError
 from psycopg2.extras import Json
 from psycopg2.sql import SQL, Identifier
