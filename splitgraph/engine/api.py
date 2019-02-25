@@ -74,6 +74,13 @@ class APIEngine:
         # if objects already exist, what do we do
 
 
+# TODO make a simple implementation (maybe a flask app right here)
+# other concerns:
+# image visibility feels too much like the whole RLS thing
+# same with object overwriting
+#
+
+
 def push(repository, remote_repository, api_engine, handler, handler_params):
     remote_images = api_engine.get_images(remote_repository)
     local_images = list(repository.images)
@@ -140,6 +147,7 @@ def pull(repository, remote_repository, api_engine):
     # Get the remote metadata
     # TODO demux external locations and put into the table
     remote_meta = api_engine.get_objects(to_download)
+    # TODO remote_meta conversion
     repository.objects.register_objects(remote_meta)
 
     # TODO tags
