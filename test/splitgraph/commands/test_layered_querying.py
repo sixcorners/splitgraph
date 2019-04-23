@@ -6,6 +6,7 @@ from splitgraph import Repository
 from splitgraph.core import clone
 from splitgraph.core._common import META_TABLES
 from splitgraph.engine import ResultShape
+from test.splitgraph.conftest import PG_MNT, OUTPUT
 
 
 def prepare_lq_repo(repo, commit_after_every, include_pk, snap_only=False):
@@ -292,3 +293,28 @@ def test_multiengine_flow(local_engine_empty, pg_repo_remote):
                                          return_shape=ResultShape.ONE_ONE) == 0
     assert len(pg_repo_remote.objects.get_downloaded_objects()) == 0
     assert len(set(pg_repo_remote.engine.get_all_tables('splitgraph_meta')).difference(set(META_TABLES))) == 0
+
+
+def test_lq_writing(pg_repo_local):
+    prepare_lq_repo(pg_repo_local, commit_after_every=True, include_pk=True)
+
+    new_head = pg_repo_local.head
+    new_head.checkout(layered=True)
+
+    pg_repo_local.run_sql("INSERT INTO fruits VALUES (4, 'sasquatch')")
+    pg_repo_local.run_sql("UPDATE fruits SET name = 'pear' WHERE fruit_id = 2")
+    pg_repo_local.run_sql("DELETE FROM fruits WHERE fruit_id = 3")
+
+
+def test_lq_writing_composite_pk(local_engine_empty):
+    OUTPUT.init()
+    OUTPUT.run_sql("CREATE TABLE test (key_1 TIMESTAMP, key_2 INTEGER, value VARCHAR, PRIMARY KEY (key_1, key_2))")
+    for i in range(10):
+        OUTPUT.run_sql("INSERT INTO test VALUES (%s, %s, %s)",
+                       (dt(2019, 1, i // 3 + 1), i % 3 + 1, str(i)))
+    head = OUTPUT.commit(chunk_size=5)
+    head.checkout(layered=True)
+
+    OUTPUT.run_sql("INSERT INTO test VALUES ('2019-01-03', 3, 'three')")
+    OUTPUT.run_sql("UPDATE test SET value = 'UPDATED' WHERE key_1 = '2019-01-01'")
+    OUTPUT.run_sql("DELETE FROM test WHERE key_1 = '2019-01-02' AND key_2 = 1")

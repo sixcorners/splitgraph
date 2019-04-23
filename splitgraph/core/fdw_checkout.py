@@ -42,6 +42,7 @@ class QueryingForeignDataWrapper(ForeignDataWrapper):
 
     def execute(self, quals, columns, sortkeys=None):
         """Main Multicorn entry point."""
+        logging.info("EXECUTE %r, %r", quals, columns)
 
         # Multicorn passes a _set_ of columns to us instead of a list, so the order of iteration through
         # it can randomly change and the order in which we return the tuples might not be the one it expects.
@@ -52,6 +53,27 @@ class QueryingForeignDataWrapper(ForeignDataWrapper):
         log_to_postgres("CNF quals: %r" % (cnf_quals,), _PG_LOGLEVEL)
 
         return self.table.query(columns, cnf_quals)
+
+    @property
+    def rowid_column(self):
+        logging.info("rowid_column")
+        pks = [c[1] for c in self.table.table_schema if c[3]]
+        if len(pks) != 1:
+            logging.info("returning _sg_table_pk")
+            return "_sg_table_pk"
+        logging.info("returning %s", pks[0])
+        return pks[0]
+
+    def insert(self, values):
+        logging.info("INSERT %r", values)
+        return values
+
+    def delete(self, oldvalues):
+        logging.info("DELETE %r", oldvalues)
+
+    def update(self, oldvalues, newvalues):
+        logging.info("UPDATE %r -> %r", oldvalues, newvalues)
+        return newvalues
 
     def __init__(self, fdw_options, fdw_columns):
         """The foreign data wrapper is initialized on the first query.
